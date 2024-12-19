@@ -25,8 +25,8 @@ To install MarkItDown, use pip: `pip install markitdown`. Alternatively, you can
 
 1. Clone the repository:
 ```bash
-git clone 
-cd 
+git clone https://github.com/buithanhdam/markdown-crack.git
+cd markdown-crack
 ```
 
 2. (Optional) Create and activate a virtual environment:
