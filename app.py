@@ -1,7 +1,6 @@
-
 import streamlit as st
 import os
-from markitdown import MarkItDown
+from src.markitdown import MarkItDown
 from openai import OpenAI
 from pathlib import Path
 import tempfile
@@ -14,8 +13,9 @@ load_dotenv()
 st.set_page_config(
     page_title="Document Analyzer with Microsoft MarkItDown",
     page_icon="📄",
-    layout="wide"
+    layout="wide",
 )
+
 
 def clear_cache():
     # Clear temporary files and cache
@@ -24,19 +24,22 @@ def clear_cache():
             os.remove(os.path.join(".cache", file))
     st.cache_data.clear()
 
+
 def process_document(uploaded_file, use_llm=False, custom_api_key=None):
     # Create a temporary file to store the uploaded content
-    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(uploaded_file.name).suffix) as tmp_file:
+    with tempfile.NamedTemporaryFile(
+        delete=False, suffix=Path(uploaded_file.name).suffix
+    ) as tmp_file:
         tmp_file.write(uploaded_file.getvalue())
         tmp_path = tmp_file.name
 
     try:
         if use_llm:
             # Use custom API key if provided, otherwise use environment variable
-            api_key = custom_api_key or os.getenv('OPENAI_API_KEY')
+            api_key = custom_api_key or os.getenv("OPENAI_API_KEY")
             if not api_key:
                 raise ValueError("OpenAI API key is required for GPT-4o")
-            
+
             client = OpenAI(api_key=api_key)
             md = MarkItDown(llm_client=client, llm_model="gpt-4o")
         else:
@@ -45,26 +48,42 @@ def process_document(uploaded_file, use_llm=False, custom_api_key=None):
         # Process the document
         result = md.convert(tmp_path)
         return result.text_content
-    
+
     finally:
         # Clean up temporary file
         os.unlink(tmp_path)
+
 
 def main():
     # Sidebar
     with st.sidebar:
         st.title("📄 Document Analyzer with Microsoft MarkItDown")
-        st.write("Upload any document to extract and analyze its content using Microsoft's MarkItDown technology")
-        
+        st.write(
+            "Upload any document to extract and analyze its content using Microsoft's MarkItDown technology"
+        )
+
         st.header("Upload")
         uploaded_file = st.file_uploader(
-            "Choose a file", 
-            type=['pdf', 'pptx', 'docx', 'xlsx', 'jpg', 'png', 'mp3', 'wav', 'html', 'csv', 'json', 'xml']
+            "Choose a file",
+            type=[
+                "pdf",
+                "pptx",
+                "docx",
+                "xlsx",
+                "jpg",
+                "png",
+                "mp3",
+                "wav",
+                "html",
+                "csv",
+                "json",
+                "xml",
+            ],
         )
-        
+
         st.header("Settings")
         use_llm = st.toggle("Use GPT-4o for Enhanced Analysis", value=False)
-        
+
         # OpenAI API Key input
         custom_api_key = None
         if use_llm:
@@ -74,14 +93,15 @@ def main():
                 custom_api_key = st.text_input(
                     "Enter OpenAI API Key",
                     type="password",
-                    help="Your API key will not be stored and is only used for this session"
+                    help="Your API key will not be stored and is only used for this session",
                 )
-        
+
         if st.button("Clear Cache"):
             clear_cache()
             st.success("Cache cleared!")
-        
-        st.markdown("""
+
+        st.markdown(
+            """
         ### Supported Formats:
         - PDF
         - PowerPoint
@@ -91,7 +111,8 @@ def main():
         - Audio (EXIF + transcription)
         - HTML
         - Text (CSV, JSON, XML)
-        """)
+        """
+        )
 
     # Main content area
     if uploaded_file:
@@ -99,35 +120,38 @@ def main():
             try:
                 # Process the document
                 text_content = process_document(uploaded_file, use_llm, custom_api_key)
-                
+
                 # Display results
                 st.header("Analysis Results")
-                
+
                 # Create tabs for different views
                 tab1, tab2 = st.tabs(["Extracted Content", "Document Information"])
-                
+
                 with tab1:
                     st.text_area("Extracted Content", text_content, height=600)
-                    
+
                     # Add download button for extracted text
                     st.download_button(
                         "Download Extracted Content",
                         text_content,
                         file_name=f"{uploaded_file.name}_extracted.txt",
-                        mime="text/plain"
+                        mime="text/plain",
                     )
-                
+
                 with tab2:
-                    st.json({
-                        "Filename": uploaded_file.name,
-                        "File size": f"{uploaded_file.size / 1024:.2f} KB",
-                        "File type": uploaded_file.type
-                    })
-                    
+                    st.json(
+                        {
+                            "Filename": uploaded_file.name,
+                            "File size": f"{uploaded_file.size / 1024:.2f} KB",
+                            "File type": uploaded_file.type,
+                        }
+                    )
+
             except Exception as e:
                 st.error(f"Error processing document: {str(e)}")
     else:
         st.info("👈 Please upload a document using the sidebar to begin analysis")
+
 
 if __name__ == "__main__":
     main()
